@@ -57,6 +57,29 @@ FRONT_MATTER_PATTERNS = [
     "publisher's note",
     "contents",
     "foreword",
+    "editorial",
+    "prologue",
+    "abstract",
+    "copyright",
+    "isbn",
+    "library of congress",
+    "british library",
+    "rights reserved",
+    "no part of this",
+    "reproduced without",
+    "printed in",
+    "first published",
+    "originally published",
+    "translated by",
+    "edited by",
+    "introduction by",
+    "foreword by",
+    "preface by",
+    "general editor",
+    "series editor",
+    "volume editor",
+    "advisory board",
+    " editorial ",
 ]
 
 
@@ -65,7 +88,21 @@ def is_front_matter(text: str, patterns: Optional[List[str]] = None) -> bool:
         patterns = FRONT_MATTER_PATTERNS
 
     text_lower = text.lower()
-    return any(pattern in text_lower for pattern in patterns)
+    
+    for pattern in patterns:
+        if pattern in text_lower:
+            return True
+    
+    lines = text_lower.split('\n')[:10]
+    for line in lines:
+        if 'introduction' in line and ('chapter' not in line and 'section' not in line):
+            return True
+        if line.strip().startswith('[') and 'translator' in line:
+            return True
+        if '©' in line or 'copyright' in line:
+            return True
+    
+    return False
 
 
 def compute_diversity(docs: List[Document]) -> float:

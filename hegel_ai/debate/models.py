@@ -40,9 +40,9 @@ class AgentResponse(BaseModel):
         import re
 
         citation_patterns = [
-            r'As \[([^\]]+)\] states: [\'"]([^\'"]+)[\'"]',
+            r'As\s+\[([^\]]+)\]\s+states:\s*[\'"]([^\'"]+)[\'"]',
+            r'As\s+\[([^\]]+)\]\s+states:',
             r'\[Source: ([^\]]+)\]',
-            r'According to \[([^\]]+)\]',
         ]
 
         citation_source = "UNKNOWN"
@@ -127,6 +127,10 @@ class DebateRecord(BaseModel):
 
     def get_statistics(self) -> Dict[str, Any]:
         if not self.turns:
+            start = datetime.fromisoformat(self.start_time)
+            end = datetime.fromisoformat(self.end_time) if self.end_time else datetime.now()
+            duration = (end - start).total_seconds()
+            
             return {
                 "total_turns": 0,
                 "total_words": 0,
@@ -134,6 +138,7 @@ class DebateRecord(BaseModel):
                 "citation_rate": 0.0,
                 "validation_pass_rate": 0.0,
                 "unique_citation_sources": 0,
+                "duration_seconds": round(duration, 1),
             }
 
         total_words = sum(turn.response.word_count for turn in self.turns)
@@ -151,6 +156,12 @@ class DebateRecord(BaseModel):
             if turn.response.citation_source != "UNKNOWN"
         )
 
+        duration = self.total_duration_seconds
+        if duration == 0.0:
+            start = datetime.fromisoformat(self.start_time)
+            end = datetime.fromisoformat(self.end_time) if self.end_time else datetime.now()
+            duration = (end - start).total_seconds()
+
         return {
             "total_turns": len(self.turns),
             "total_words": total_words,
@@ -158,7 +169,7 @@ class DebateRecord(BaseModel):
             "citation_rate": round(citation_count / len(self.turns), 2),
             "validation_pass_rate": round(validation_pass_count / len(self.turns), 2),
             "unique_citation_sources": len(unique_sources),
-            "duration_seconds": round(self.total_duration_seconds, 1),
+            "duration_seconds": round(duration, 1),
         }
 
     def save_json(self, path: Path) -> Path:

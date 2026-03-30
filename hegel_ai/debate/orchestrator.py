@@ -196,6 +196,19 @@ class DebateOrchestrator:
                 pbar=pbar,
             )
 
+            # Check for repetition
+            similarity = self._check_repetition(response.raw_response, debate_history, round_num)
+            if similarity > 0.7:
+                logger.warning(f"High repetition detected for {agent.config.name} (sim: {similarity:.2f}). Retrying.")
+                response = self._generate_with_citation_retry(
+                    agent=agent,
+                    passage=passage,
+                    retrieved=retrieved,
+                    debate_history=debate_history + f"\n\n**WARNING**: Your previous attempt was too similar to other responses. Please provide a fresh perspective.",
+                    round_num=round_num,
+                    pbar=pbar,
+                )
+
             turn = DebateTurn(
                 agent=agent.config.name,
                 round=round_num,
@@ -299,9 +312,11 @@ class DebateOrchestrator:
 
 **CRITICAL CITATION REQUIREMENT:**
 
-Your previous response did not properly cite a source. You MUST start with:
+Your previous response did not properly cite a source or was too repetitive. You MUST start with:
 
-"As [EXACT_FILENAME.txt] states: '[DIRECT_QUOTE]'"
+"As [source filename] states: '...'"
+
+Example: "As [Hegel_Philosophy_of_History.txt] states: 'Spirit is self-contained existence.'"
 
 RETRIEVED EXCERPTS (YOU MUST CITE ONE):
 {grounding_text}
@@ -309,10 +324,49 @@ RETRIEVED EXCERPTS (YOU MUST CITE ONE):
 DEBATE HISTORY:
 {debate_history[-2000:]}
 
-YOUR PREVIOUS RESPONSE (which failed citation):
+YOUR PREVIOUS RESPONSE:
 {previous_response[:500]}...
 
-YOUR NEW RESPONSE (MUST START WITH PROPER CITATION):"""
+YOUR NEW RESPONSE (MUST BE UNIQUE AND START WITH PROPER CITATION):"""
+
+    def _check_repetition(self, response: str, history: str, round_num: int) -> float:
+        """Check for repetition against previous responses in the current round."""
+        import re
+        
+        # Extract current round context
+        round_marker = f"ROUND {round_num}"
+        if round_marker not in history:
+            return 0.0
+            
+        current_round_text = history.split(round_marker)[-1].strip()
+        if not current_round_text:
+            return 0.0
+            
+        # Helper to get sentences
+        def get_sentences(text: str) -> set:
+            # Simple sentence tokenizer
+            sents = re.split(r'[.!?]\s+', text.lower())
+            return {s.strip() for s in sents if len(s.strip()) > 20}
+            
+        res_sents = get_sentences(response)
+        hist_sents = get_sentences(current_round_text)
+        
+        if not res_sents or not hist_sents:
+            return 0.0
+            
+        intersection = res_sents.intersection(hist_sents)
+        jaccard = len(intersection) / len(res_sents)
+        
+        # Also check for internal repetition
+        words = response.lower().split()
+        if len(words) > 50:
+            for i in range(len(words) - 10):
+                phrase = " ".join(words[i:i+10])
+                if response.lower().count(phrase) > 1:
+                    logger.warning(f"Internal repetition detected: '{phrase}'")
+                    return 0.8  # Force retry
+                    
+        return jaccard
 
     def _run_moderator_turn(
         self,

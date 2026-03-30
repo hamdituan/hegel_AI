@@ -59,7 +59,6 @@ def create_vector_store(
                 logger.error(f"Failed to add batch {i // batch_size}: {e}")
                 raise
 
-    vectorstore.persist()
     elapsed = time.time() - start_time
 
     try:

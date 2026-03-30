@@ -6,10 +6,10 @@ A multi-agent philosophical debate system powered by RAG (Retrieval-Augmented Ge
 
 Hegel AI orchestrates structured debates between AI agents, each representing a distinct philosophical perspective (Hegelian, Utilitarian, Deconstructionist, Postcolonial). The system analyzes philosophical passages by retrieving relevant excerpts from Hegel's corpus and generating cited, structured arguments through:
 
-- **Tree of Thought prompting** – Each agent explores multiple reasoning paths before committing to an argument
-- **Self-Refinement** – Agents critique and revise their arguments through iterative passes
-- **Dialectical structure** – Thesis-antithesis-synthesis debate format
-- **Citation enforcement** – Mandatory source citation with validation and retry logic
+- **Tree of Thought prompting**: Each agent explores multiple reasoning paths before committing to an argument
+- **Self-Refinement**: Agents critique and revise their arguments through iterative passes
+- **Dialectical structure**: Thesis-antithesis-synthesis debate format
+- **Citation enforcement**: Mandatory source citation with validation and retry logic
 
 ## Features
 
@@ -19,7 +19,7 @@ Hegel AI orchestrates structured debates between AI agents, each representing a 
 | **Tree of Thought** | 3 reasoning branches explored per agent, evaluated, and synthesized |
 | **Self-Refinement** | 2 passes of critique and revision per argument |
 | **RAG Pipeline** | Semantic chunking, embedding-based retrieval, MMR diversity |
-| **Citation Validation** | Regex + source verification with automatic retry |
+| **Citation Validation** | Regex and source verification with automatic retry |
 | **Structured Output** | JSON records, human-readable transcripts, statistics |
 | **Moderator** | Summarizes disagreements and poses new questions between rounds |
 
@@ -213,16 +213,6 @@ Hegel_AI/
 | pydantic | >=2.0.0 | Configuration validation |
 | nltk | >=3.9 | Text tokenization |
 | tqdm | >=4.66.0 | Progress bars |
-
-## Performance
-
-| Metric | Value |
-|--------|-------|
-| Vector DB chunks | ~8,673 |
-| Debate duration | ~3-5 minutes (3 rounds, 4 agents) |
-| ToT branches per agent | 3 |
-| Refinement passes | 2 |
-| Citation rate | ~90%+ (with retry logic) |
 
 ## Advanced Usage
 
